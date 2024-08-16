@@ -1,4 +1,5 @@
-﻿using Microsoft.WindowsAzure.Storage;
+﻿using Common.Entities;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Table;
 using System;
@@ -71,6 +72,30 @@ namespace UserService
             CloudBlockBlob blob = container.GetBlockBlobReference(blobName);
 
             return blob;
+        }
+
+        public IEnumerable<UserEntity> GetAllUsers()
+        {
+            var q = new TableQuery<UserEntity>();
+            var qRes = UsersTable.ExecuteQuerySegmentedAsync(q, null).GetAwaiter().GetResult();
+            return qRes.Results;
+        }
+
+        public async Task<byte[]> DownloadImage(UserRepository dataRepo, UserEntity user, string nameOfContainer)
+        {
+
+            CloudBlockBlob blob = await dataRepo.GetBlockBlobReference(nameOfContainer, $"image_{user.Id}");
+
+
+            await blob.FetchAttributesAsync();
+
+            long blobLength = blob.Properties.Length;
+
+            byte[] byteArray = new byte[blobLength];
+            await blob.DownloadToByteArrayAsync(byteArray, 0);
+
+            return byteArray;
+
         }
 
 

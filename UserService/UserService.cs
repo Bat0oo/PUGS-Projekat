@@ -1,23 +1,137 @@
-using System;
-using System.Collections.Generic;
-using System.Fabric;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using Common.DTO;
+using Common.Entities;
+using Common.Interfaces;
+using Common.Mappers;
+using Common.Models;
 using Microsoft.ServiceFabric.Data.Collections;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Table;
+using System.Fabric;
 
 namespace UserService
 {
     /// <summary>
     /// An instance of this class is created for each service replica by the Service Fabric runtime.
     /// </summary>
-    internal sealed class UserService : StatefulService
+    public sealed class UserService : StatefulService, IUser
     {
+        public UserRepository userRepo;
         public UserService(StatefulServiceContext context)
             : base(context)
-        { }
+        {
+            userRepo = new UserRepository("UsersTaxiApplication");
+        }
+
+        public async Task<bool> AddNewUser(User user)
+        {
+            var userDictionary = await StateManager.GetOrAddAsync<IReliableDictionary<string, User>>("UserEntities");
+
+            try
+            {
+                using (var transaction = StateManager.CreateTransaction())
+                {
+
+
+
+                    //insert image of user in blob
+                    CloudBlockBlob blob = await userRepo.GetBlockBlobReference("users", $"image_{user.Username}");
+                    blob.Properties.ContentType = user.ImageFile.ContentType;
+                    await blob.UploadFromByteArrayAsync(user.ImageFile.FileContent, 0, user.ImageFile.FileContent.Length);
+                    string imageUrl = blob.Uri.AbsoluteUri;
+
+                    //insert user in database
+                    UserEntity newUser = new UserEntity(user, imageUrl);
+                    TableOperation operation = TableOperation.Insert(newUser);
+                    await userRepo.UsersTable.ExecuteAsync(operation);
+
+                    await userDictionary.AddAsync(transaction, user.Username, user);
+                    await transaction.CommitAsync();
+
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        private async Task LoadUsers()
+        {
+            var userDictionary = await StateManager.GetOrAddAsync<IReliableDictionary<string, User>>("UserEntities");
+            try
+            {
+                using (var transaction = StateManager.CreateTransaction())
+                {
+                    var users = userRepo.GetAllUsers();
+                    if (users.Count() == 0) return;
+                    else
+                    {
+                        foreach (var user in users)
+                        {
+                            byte[] image = await userRepo.DownloadImage(userRepo, user, "users");
+                            await userDictionary.AddAsync(transaction, user.Email, UserMapper.MapUserEntityToUser(user, image));
+                        }
+                    }
+
+                    await transaction.CommitAsync();
+
+                }
+
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        public async Task<LogedUserDTO> LoginUser(LoginUserDTO loginUserDTO)
+        {
+            var users = await this.StateManager.GetOrAddAsync<IReliableDictionary<Guid, User>>("UserEntities");
+
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                var enumerable = await users.CreateEnumerableAsync(tx);
+
+                using (var enumerator = enumerable.GetAsyncEnumerator())
+                {
+                    while (await enumerator.MoveNextAsync(default(CancellationToken)))
+                    {
+                        if (enumerator.Current.Value.Email == loginUserDTO.Email && enumerator.Current.Value.Password == loginUserDTO.Password)
+                        {
+                            return new LogedUserDTO(enumerator.Current.Value.Id, enumerator.Current.Value.TypeOfUser);
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+
+        public async Task<List<FullUserDTO>> ListUsers()
+        {
+            var users = await this.StateManager.GetOrAddAsync<IReliableDictionary<Guid, User>>("UserEntities");
+
+            List<FullUserDTO> userList = new List<FullUserDTO>();
+
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                var enumerable = await users.CreateEnumerableAsync(tx);
+
+                using (var enumerator = enumerable.GetAsyncEnumerator())
+                {
+                    while (await enumerator.MoveNextAsync(default(CancellationToken)))
+                    {
+                        userList.Add(UserMapper.MapUserToFullUserDto(enumerator.Current.Value));
+                    }
+                }
+            }
+
+            return userList;
+
+        }
+
 
         /// <summary>
         /// Optional override to create listeners (e.g., HTTP, Service Remoting, WCF, etc.) for this service replica to handle client or user requests.
@@ -28,7 +142,7 @@ namespace UserService
         /// <returns>A collection of listeners.</returns>
         protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners()
         {
-            return new ServiceReplicaListener[0];
+            return new ServiceReplicaListener[0]; //pogledati ovo
         }
 
         /// <summary>
@@ -42,6 +156,9 @@ namespace UserService
             //       or remove this RunAsync override if it's not needed in your service.
 
             var myDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, long>>("myDictionary");
+            var usersDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, User>>("UserEntities");
+
+            await LoadUsers();
 
             while (true)
             {
@@ -64,5 +181,8 @@ namespace UserService
                 await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
             }
         }
+
+
+
     }
 }

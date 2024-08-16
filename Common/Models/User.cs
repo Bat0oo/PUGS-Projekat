@@ -74,7 +74,7 @@ namespace Common.Models
             Address = userRegister.Address;
             Email = userRegister.Email;
             Password = userRegister.Password;
-            TypeOfUser = Enum.TryParse<UserRoles.Roles>(userRegister.TypeOfUser, true, out var role) ? role : UserRoles.Roles.Rider;
+            TypeOfUser = Enum.TryParse<UserRoles.Roles>(userRegister.TypeOfUser, true, out var role) ? role : UserRoles.Roles.Passenger;
             Username = userRegister.Username;
             Id = Guid.NewGuid();
             switch (TypeOfUser)
@@ -82,7 +82,7 @@ namespace Common.Models
                 case UserRoles.Roles.Admin:
                     IsVerified = true;
                     break;
-                case UserRoles.Roles.Rider:
+                case UserRoles.Roles.Passenger:
                     IsVerified = true;
                     break;
                 case UserRoles.Roles.Driver:
