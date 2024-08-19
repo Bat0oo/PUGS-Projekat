@@ -5,6 +5,7 @@ using Common.Mappers;
 using Common.Models;
 using Microsoft.ServiceFabric.Data.Collections;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
+using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -26,31 +27,37 @@ namespace UserService
 
         public async Task<bool> AddNewUser(User user)
         {
-            var userDictionary = await StateManager.GetOrAddAsync<IReliableDictionary<string, User>>("UserEntities");
+            var userDictionary = await StateManager.GetOrAddAsync<IReliableDictionary<Guid, User>>("UserEntities");
 
             try
             {
                 using (var transaction = StateManager.CreateTransaction())
                 {
+                    if (!await CheckIfUserAlreadyExists(user))
+                    {
+
+                        await userDictionary.AddAsync(transaction, user.Id, user); // dodaj ga prvo u reliable 
+
+                        //insert image of user in blob
+                        CloudBlockBlob blob = await userRepo.GetBlockBlobReference("users", $"image_{user.Id}");
+                        blob.Properties.ContentType = user.ImageFile.ContentType;
+                        await blob.UploadFromByteArrayAsync(user.ImageFile.FileContent, 0, user.ImageFile.FileContent.Length);
+                        string imageUrl = blob.Uri.AbsoluteUri;
+
+                        //insert user in database
+                        UserEntity newUser = new UserEntity(user, imageUrl);
+                        TableOperation operation = TableOperation.Insert(newUser);
+                        await userRepo.UsersTable.ExecuteAsync(operation);
 
 
 
-                    //insert image of user in blob
-                    CloudBlockBlob blob = await userRepo.GetBlockBlobReference("users", $"image_{user.Username}");
-                    blob.Properties.ContentType = user.ImageFile.ContentType;
-                    await blob.UploadFromByteArrayAsync(user.ImageFile.FileContent, 0, user.ImageFile.FileContent.Length);
-                    string imageUrl = blob.Uri.AbsoluteUri;
 
-                    //insert user in database
-                    UserEntity newUser = new UserEntity(user, imageUrl);
-                    TableOperation operation = TableOperation.Insert(newUser);
-                    await userRepo.UsersTable.ExecuteAsync(operation);
-
-                    await userDictionary.AddAsync(transaction, user.Username, user);
-                    await transaction.CommitAsync();
-
+                        await transaction.CommitAsync();
+                        return true;
+                    }
+                    return false;
                 }
-                return true;
+
             }
             catch (Exception ex)
             {
@@ -58,9 +65,37 @@ namespace UserService
             }
         }
 
+        private async Task<bool> CheckIfUserAlreadyExists(User user)
+        {
+            var users = await StateManager.GetOrAddAsync<IReliableDictionary<Guid, User>>("UserEntities");
+            try
+            {
+                using (var tx = StateManager.CreateTransaction())
+                {
+                    var enumerable = await users.CreateEnumerableAsync(tx);
+
+                    using (var enumerator = enumerable.GetAsyncEnumerator())
+                    {
+                        while (await enumerator.MoveNextAsync(default(CancellationToken)))
+                        {
+                            if (enumerator.Current.Value.Email == user.Email || enumerator.Current.Value.Id == user.Id || enumerator.Current.Value.Username == user.Username)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         private async Task LoadUsers()
         {
-            var userDictionary = await StateManager.GetOrAddAsync<IReliableDictionary<string, User>>("UserEntities");
+            var userDictionary = await StateManager.GetOrAddAsync<IReliableDictionary<Guid, User>>("UserEntities");
             try
             {
                 using (var transaction = StateManager.CreateTransaction())
@@ -72,7 +107,7 @@ namespace UserService
                         foreach (var user in users)
                         {
                             byte[] image = await userRepo.DownloadImage(userRepo, user, "users");
-                            await userDictionary.AddAsync(transaction, user.Email, UserMapper.MapUserEntityToUser(user, image));
+                            await userDictionary.AddAsync(transaction, user.Id, UserMapper.MapUserEntityToUser(user, image));
                         }
                     }
 
@@ -109,6 +144,8 @@ namespace UserService
         }
 
 
+
+
         public async Task<List<FullUserDTO>> ListUsers()
         {
             var users = await this.StateManager.GetOrAddAsync<IReliableDictionary<Guid, User>>("UserEntities");
@@ -142,7 +179,7 @@ namespace UserService
         /// <returns>A collection of listeners.</returns>
         protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners()
         {
-            return new ServiceReplicaListener[0]; //pogledati ovo
+            return this.CreateServiceRemotingReplicaListeners();
         }
 
         /// <summary>

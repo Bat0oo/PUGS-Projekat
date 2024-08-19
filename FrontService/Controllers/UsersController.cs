@@ -24,33 +24,33 @@ namespace FrontService.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> RegularRegister([FromForm] UserRegister userData)
-        {
-            try
+            public async Task<IActionResult> RegularRegister([FromForm] UserRegister userData)
             {
-
-                User userForRegister = new User(userData);
-
-                var fabricClient = new FabricClient();
-                bool result = false;
-
-                var partitionList = await fabricClient.QueryManager.GetPartitionListAsync(new Uri("fabric:/TaxiApp/UsersService"));
-                foreach (var partition in partitionList)
+                try
                 {
-                    var partitionKey = new ServicePartitionKey(((Int64RangePartitionInformation)partition.PartitionInformation).LowKey);
-                    var proxy = ServiceProxy.Create<IUser>(new Uri("fabric:/TaxiApp/UsersService"), partitionKey);
-                    result = await proxy.AddNewUser(userForRegister);
+
+                    User userForRegister = new User(userData);
+
+                    var fabricClient = new FabricClient();
+                    bool result = false;
+
+                    var partitionList = await fabricClient.QueryManager.GetPartitionListAsync(new Uri("fabric:/TaxiApplication/UserService"));
+                    foreach (var partition in partitionList)
+                    {
+                        var partitionKey = new ServicePartitionKey(((Int64RangePartitionInformation)partition.PartitionInformation).LowKey);
+                        var proxy = ServiceProxy.Create<IUser>(new Uri("fabric:/TaxiApplication/UserService"), partitionKey);
+                        result = await proxy.AddNewUser(userForRegister);
+                    }
+
+                    if (result) return Ok($"Successfully registered new User: {userData.Username}");
+                    else return StatusCode(500, "Failed to register new User");
+
+
                 }
-
-                if (result) return Ok($"Successfully registered new User: {userData.Username}");
-                else return StatusCode(500, "Failed to register new User");
-
-
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, "An error occurred while registering new User");
-            }
+                catch (Exception)
+                {
+                    return StatusCode(500, "An error occurred while registering new User");
+                }
         }
 
         [HttpGet("get")]
@@ -62,11 +62,11 @@ namespace FrontService.Controllers
                 var fabricClient = new FabricClient();
                 var result = new List<FullUserDTO>();
 
-                var partitionList = await fabricClient.QueryManager.GetPartitionListAsync(new Uri("fabric:/TaxiApp/UsersService"));
+                var partitionList = await fabricClient.QueryManager.GetPartitionListAsync(new Uri("fabric:/TaxiApplication/UserService"));
                 foreach (var partition in partitionList)
                 {
                     var partitionKey = new ServicePartitionKey(((Int64RangePartitionInformation)partition.PartitionInformation).LowKey);
-                    var proxy = ServiceProxy.Create<IUser>(new Uri("fabric:/TaxiApp/UsersService"), partitionKey);
+                    var proxy = ServiceProxy.Create<IUser>(new Uri("fabric:/TaxiApplication/UserService"), partitionKey);
                     var partitionResult = await proxy.ListUsers();
                     result.AddRange(partitionResult);
                 }
@@ -92,11 +92,11 @@ namespace FrontService.Controllers
                 var fabricClient = new FabricClient();
                 LogedUserDTO result = null; 
 
-                var partitionList = await fabricClient.QueryManager.GetPartitionListAsync(new Uri("fabric:/TaxiApp/UsersService"));
+                var partitionList = await fabricClient.QueryManager.GetPartitionListAsync(new Uri("fabric:/TaxiApplication/UserService"));
                 foreach (var partition in partitionList)
                 {
                     var partitionKey = new ServicePartitionKey(((Int64RangePartitionInformation)partition.PartitionInformation).LowKey);
-                    var proxy = ServiceProxy.Create<IUser>(new Uri("fabric:/TaxiApp/UsersService"), partitionKey);
+                    var proxy = ServiceProxy.Create<IUser>(new Uri("fabric:/TaxiApplication/UserService"), partitionKey);
                     var partitionResult = await proxy.LoginUser(user);
 
                     if (partitionResult != null)

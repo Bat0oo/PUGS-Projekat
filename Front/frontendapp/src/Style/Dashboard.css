@@ -1,0 +1,57 @@
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  
+  .dashboard-header {
+    background-color: #007bff;
+    color: white;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .dashboard-body {
+    display: flex;
+    flex: 1;
+  }
+  
+  .dashboard-sidebar {
+    width: 200px;
+    background-color: #f8f9fa;
+    padding: 20px;
+  }
+  
+  .dashboard-sidebar ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .dashboard-sidebar ul li {
+    margin: 15px 0;
+  }
+  
+  .dashboard-sidebar ul li a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  .dashboard-content {
+    flex: 1;
+    padding: 20px;
+    background-color: #e9ecef;
+  }
+  
+  .dashboard-widgets {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .widget {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    flex: 1;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
