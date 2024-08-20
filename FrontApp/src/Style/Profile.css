@@ -1,0 +1,51 @@
+.custom-style {
+  color: rgb(0, 0, 0);
+  display: block;
+  font-family: UberMove, UberMoveText, system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  height: 44px;
+  line-height: 44px;
+  overflow-wrap: break-word;
+  text-size-adjust: 100%;
+  unicode-bidi: isolate;
+  width: 1300px;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  margin-left: 30px; /* Left margin set to 30px */
+  margin-top: 20px; /* Top margin set to 30px */
+}
+  
+  .custom-styleImage{
+     width: '96px';
+     height: '96px'; 
+     marginLeft: '30px'; 
+     marginTop: '20px'; 
+     borderRadius: '50%';
+  }
+  .customProfile-div{
+    font-weight: bold;
+  }
+
+  .customProfile-hr{
+    width : '100%';
+  }
+  .customView-div{
+    color: (128, 128, 128);
+  }
+
+  .edit-button{
+    color: white;
+    background-color: black;
+    border-radius: 25px;
+    padding: 8px 16px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    margin-right: 20px;
+    width: 200px; /* Adjusted to auto to allow natural width */
+    height: 40px;
+    box-shadow: 0 0 0 2px white;
+    transition: background-color 0.3s ease;
+  }
+  .edit-button:hover {
+    background-color: gray; /* Change to gray on hover */
+  }

@@ -1,0 +1,50 @@
+.black-headerDashboar {
+    @apply bg-black text-white py-4 text-end;
+  }
+.black-headerDashboar h1 {
+    @apply text-2xl font-bold ml-24 w-1/2 text-start;
+  }
+
+.button {
+    color: white;
+    background-color: black;
+    border-radius: 25px; /* Adjust for desired roundness */
+    padding: 8px 16px;
+    margin-top: 20px;
+    margin-bottom: 4px;
+    margin-right : 0px;
+    margin-left : 10px;
+    width: 90%;
+    height: 40px;
+    box-shadow: 0 0 0 2px white; /* White border by default */
+    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+  }
+
+  .button-logout {
+    color: white;
+    background-color: black;
+    border-radius: 25px;
+    padding: 8px 16px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    margin-right: 20px;
+    width: auto; /* Adjusted to auto to allow natural width */
+    height: 40px;
+    box-shadow: 0 0 0 2px white;
+    transition: background-color 0.3s ease;
+  }
+  .button:hover {
+    background-color: gray; /* Change to gray on hover */
+  }
+
+  .button-logout:hover {
+    background-color: gray; /* Change to gray on hover */
+  }
+  
+  .full-width-hr {
+    width: 100%;
+    border: none;
+    height: 1px;
+    margin: 0;
+    background-color: white;
+  }

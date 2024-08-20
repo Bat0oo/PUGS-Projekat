@@ -1,0 +1,28 @@
+/* Centering the icon within the table cell */
+.icon-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Custom button styles */
+.custom-button {
+    color: white;
+    border-radius: 25px;
+    padding: 8px 16px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    margin-right: 20px;
+    width: auto;
+    height: 40px;
+    box-shadow: 0 0 0 2px white;
+    transition: background-color 0.3s ease;
+}
+
+.accept-button {
+    background-color: green;
+}
+
+.decline-button {
+    background-color: red;
+}

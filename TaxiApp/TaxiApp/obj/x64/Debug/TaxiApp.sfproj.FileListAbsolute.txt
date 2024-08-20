@@ -1,0 +1,2 @@
+C:\Users\0010\Desktop\projekat\TaxiApp\TaxiApp\obj\x64\Debug\TaxiApp.sfproj.CoreCompileInputs.cache
+C:\Users\0010\Desktop\projekat\ServiceFabric\TaxiApp\TaxiApp\obj\x64\Debug\TaxiApp.sfproj.CoreCompileInputs.cache

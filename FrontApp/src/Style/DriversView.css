@@ -1,0 +1,47 @@
+.centered {
+    display: flex;
+    justify-content: center;
+}
+
+.styled-table {
+    width: 80%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.styled-table th,
+.styled-table td {
+    border: none; /* Remove vertical borders */
+    padding: 8px;
+    text-align: center;
+}
+
+.styled-table th {
+    background-color: black;
+    color: white;
+    font-weight: bold;
+}
+
+.styled-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.green-button,
+.red-button {
+    border-radius: 20px;
+    padding: 5px 10px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    outline: none;
+}
+
+.green-button {
+    background-color: green;
+}
+
+.red-button {
+    background-color: red;
+}
